@@ -20,7 +20,6 @@ initial_normal_message = \
 '$GNGL'
 
 
-
 def test_parse_NMEA():
     parser = Parser()
     assert parser.parse_NMEA('') == False
@@ -39,4 +38,4 @@ def test_parse_time():
 
 def test_parse_datetime():
     parser = Parser()
-    parser.parse_datetime(normal_RMC)
+    assert parser.parse_datetime(normal_RMC) == '2021-12-23 14:23:57+08:00'

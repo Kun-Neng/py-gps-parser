@@ -1,6 +1,13 @@
+import datetime
+import pytz
+
+
 class Parser:
     def __init__(self) -> None:
         self.is_GPS_normal = False
+        
+        self.local_time_zone = 'Asia/Taipei'
+        self.local_datetime = None
 
     def parse_NMEA(self, messages) -> bool:
         if messages == '':
@@ -23,8 +30,10 @@ class Parser:
 
             if (one_line.find('RMC') != -1):
                 # print(one_line)
-                self.parse_datetime(one_line)
-                flag_latlon_ready = True
+                local_datetime = self.parse_datetime(one_line)
+                if self.local_datetime is not None:
+                    self.local_datetime = local_datetime
+                # flag_latlon_ready = True
 
         if flag_latlon_ready is True:
             self.is_GPS_normal = True
@@ -66,6 +75,20 @@ class Parser:
 
         if len(date_token) < 6:
             return None
+        
+        # time_string = self.parse_date(date_token) + ' ' + self.parse_time(time_token)
+        # print(time_string)
 
-        time_string = self.parse_date(date_token) + ' ' + self.parse_time(time_token)
-        print(time_string)
+        date_tokens = self.parse_date(date_token).split('-')
+        time_tokens = self.parse_time(time_token).split(':')
+        ori_datetime = datetime.datetime(
+            int(date_tokens[0]), int(date_tokens[1]), int(date_tokens[2]),
+            int(time_tokens[0]), int(time_tokens[1]), int(time_tokens[2]),
+            tzinfo=datetime.timezone.utc
+        )
+        # print(ori_datetime)
+
+        taipei_time_zone = pytz.timezone(self.local_time_zone)
+        taipei_datetime = ori_datetime.astimezone(taipei_time_zone)
+
+        return str(taipei_datetime)
