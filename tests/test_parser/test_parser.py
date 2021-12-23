@@ -39,3 +39,8 @@ def test_parse_time():
 def test_parse_datetime():
     parser = Parser()
     assert parser.parse_datetime(normal_RMC) == '2021-12-23 14:23:57+08:00'
+
+def test_parse_latlon():
+    parser = Parser()
+    assert parser.parse_latlon(normal_RMC, 3, 5) == True
+    assert parser.latlon_radian == [24.862677, 121.25868783333334]

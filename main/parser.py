@@ -9,6 +9,11 @@ class Parser:
         self.local_time_zone = 'Asia/Taipei'
         self.local_datetime = None
 
+        self.__MIN_LAT_LEN = 3
+        self.__MIN_LON_LEN = 4
+        self.__DIRECTION_MAP = {"N": "北緯", "S": "南緯", "E": "東經", "W": "西經"}
+        self.latlon_radian = []
+
     def parse_NMEA(self, messages) -> bool:
         if messages == '':
             return False
@@ -33,7 +38,9 @@ class Parser:
                 local_datetime = self.parse_datetime(one_line)
                 if self.local_datetime is not None:
                     self.local_datetime = local_datetime
-                # flag_latlon_ready = True
+                if self.parse_latlon(one_line, 3, 5) is False:
+                    continue
+                flag_latlon_ready = True
 
         if flag_latlon_ready is True:
             self.is_GPS_normal = True
@@ -92,3 +99,28 @@ class Parser:
         taipei_datetime = ori_datetime.astimezone(taipei_time_zone)
 
         return str(taipei_datetime)
+    
+    def parse_latlon(self, one_line, i_lat, i_lon) -> bool:
+        str_slice = one_line.split(',')
+        if len(str_slice[i_lat]) < self.__MIN_LAT_LEN or len(str_slice[i_lon]) < self.__MIN_LON_LEN:
+            return False
+
+        # i_lat_direction = i_lat + 1
+        # i_lon_direction = i_lon + 1
+        # lat_direction = str_slice[i_lat_direction]  # N/S
+        # lon_direction = str_slice[i_lon_direction]  # E/W
+
+        latitude_degree = float(str_slice[i_lat][:2])
+        latitude_minute = float(str_slice[i_lat][2:])
+        longitude_degree = float(str_slice[i_lon][:3])
+        longitude_minute = float(str_slice[i_lon][3:])
+
+        # latitude_str = self.__DIRECTION_MAP[lat_direction] + str(latitude_degree) + "度" + str(latitude_minute) + "分"
+        # longitude_str = self.__DIRECTION_MAP[lon_direction] + str(longitude_degree) + "度" + str(longitude_minute) + "分"
+        # print(latitude_str, longitude_str)
+
+        latitude_radian = latitude_degree + latitude_minute / 60
+        longitude_radian = longitude_degree + longitude_minute / 60
+        self.latlon_radian = [latitude_radian, longitude_radian]
+
+        return True
