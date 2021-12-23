@@ -41,6 +41,11 @@ class Parser:
                 if self.parse_latlon(one_line, 3, 5) is False:
                     continue
                 flag_latlon_ready = True
+            
+            if (one_line.find('GGA') != -1):
+                if self.parse_latlon(one_line, 2, 4):
+                    continue
+                flag_latlon_ready = True
 
         if flag_latlon_ready is True:
             self.is_GPS_normal = True
