@@ -2,16 +2,20 @@ import datetime
 import pytz
 
 
-class Parser:
-    def __init__(self) -> None:
+class GPSParser:
+    def __init__(self, local_time_zone = 'Asia/Taipei') -> None:
         self.is_GPS_normal = False
         
-        self.local_time_zone = 'Asia/Taipei'
+        self.local_time_zone = local_time_zone
         self.local_datetime = None
 
         self.__MIN_LAT_LEN = 3
         self.__MIN_LON_LEN = 4
-        self.__DIRECTION_MAP = {"N": "北緯", "S": "南緯", "E": "東經", "W": "西經"}
+        # self.__DIRECTION_MAP = {"N": "北緯", "S": "南緯", "E": "東經", "W": "西經"}
+        self.latitude_degree = None
+        self.latitude_minute = None
+        self.longitude_degree = None
+        self.longitude_minute = None
         self.latlon_radian = []
 
     def parse_NMEA(self, messages) -> bool:
@@ -115,17 +119,17 @@ class Parser:
         # lat_direction = str_slice[i_lat_direction]  # N/S
         # lon_direction = str_slice[i_lon_direction]  # E/W
 
-        latitude_degree = float(str_slice[i_lat][:2])
-        latitude_minute = float(str_slice[i_lat][2:])
-        longitude_degree = float(str_slice[i_lon][:3])
-        longitude_minute = float(str_slice[i_lon][3:])
+        self.latitude_degree = float(str_slice[i_lat][:2])
+        self.latitude_minute = float(str_slice[i_lat][2:])
+        self.longitude_degree = float(str_slice[i_lon][:3])
+        self.longitude_minute = float(str_slice[i_lon][3:])
 
-        # latitude_str = self.__DIRECTION_MAP[lat_direction] + str(latitude_degree) + "度" + str(latitude_minute) + "分"
-        # longitude_str = self.__DIRECTION_MAP[lon_direction] + str(longitude_degree) + "度" + str(longitude_minute) + "分"
+        # latitude_str = self.__DIRECTION_MAP[lat_direction] + str(self.latitude_degree) + "度" + str(self.latitude_minute) + "分"
+        # longitude_str = self.__DIRECTION_MAP[lon_direction] + str(self.longitude_degree) + "度" + str(self.longitude_minute) + "分"
         # print(latitude_str, longitude_str)
 
-        latitude_radian = latitude_degree + latitude_minute / 60
-        longitude_radian = longitude_degree + longitude_minute / 60
+        latitude_radian = self.latitude_degree + self.latitude_minute / 60
+        longitude_radian = self.longitude_degree + self.longitude_minute / 60
         self.latlon_radian = [latitude_radian, longitude_radian]
 
         return True
