@@ -5,7 +5,7 @@ Steps
 -----
 * Step 1: import py-parser module
 ```python
-from pyparser import GPSParser
+from gpsparser import GPSParser
 ```
 
 * Step 2: prepare GPS sentences, e.g.,

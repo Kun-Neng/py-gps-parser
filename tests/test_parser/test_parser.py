@@ -1,4 +1,4 @@
-from src.pyparser import GPSParser
+from src.gpsparser import GPSParser
 
 
 invalid_RMC_1 = 'GNRMC,062357.00,A,2502.3376,N,12133.52528,E,0.132,,231221,,,A*68'
