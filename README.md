@@ -3,7 +3,7 @@ GPS parser module
 
 Steps
 -----
-* Step 1: import pygpsparser module
+* Step 1: install pygpsparser module
 ```python
 from gpsparser import GPSParser
 ```
