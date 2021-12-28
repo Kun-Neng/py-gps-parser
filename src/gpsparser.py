@@ -16,7 +16,8 @@ class GPSParser:
         self.latitude_minute = None
         self.longitude_degree = None
         self.longitude_minute = None
-        self.latlon_radian = []
+        self.latlon_radian_RMC = []
+        self.latlon_radian_GGA = []
 
     def parse_NMEA(self, messages) -> bool:
         if messages == '':
@@ -104,10 +105,10 @@ class GPSParser:
         )
         # print(ori_datetime)
 
-        taipei_time_zone = pytz.timezone(self.local_time_zone)
-        taipei_datetime = ori_datetime.astimezone(taipei_time_zone)
+        time_zone = pytz.timezone(self.local_time_zone)
+        local_datetime = ori_datetime.astimezone(time_zone)
 
-        return str(taipei_datetime)
+        return str(local_datetime)
     
     def parse_latlon(self, one_line, i_lat, i_lon) -> bool:
         str_slice = one_line.split(',')
@@ -130,6 +131,10 @@ class GPSParser:
 
         latitude_radian = self.latitude_degree + self.latitude_minute / 60
         longitude_radian = self.longitude_degree + self.longitude_minute / 60
-        self.latlon_radian = [latitude_radian, longitude_radian]
+
+        if i_lat == 3 and i_lon == 5:
+            self.latlon_radian_RMC = [latitude_radian, longitude_radian]
+        elif i_lat == 2 and i_lon == 4:
+            self.latlon_radian_GGA = [latitude_radian, longitude_radian]
 
         return True

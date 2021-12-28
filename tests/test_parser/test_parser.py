@@ -61,5 +61,5 @@ def test_parse_latlon():
     assert parser.latitude_minute == 2.3376
     assert parser.longitude_degree == 121
     assert parser.longitude_minute == 33.52528
-    assert parser.latlon_radian == [25.03896, 121.55875466666667]
+    assert parser.latlon_radian_RMC == [25.03896, 121.55875466666667]
     assert parser.parse_latlon(normal_GGA, 2, 4) == True
