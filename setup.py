@@ -4,7 +4,7 @@ with open('README.md', 'r', encoding='utf-8') as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name='gpsparser',
+    name='pygpsparser',
     version='0.0.3',
     author='Kun-Neng Hung',
     author_email='kunneng.hung@gmail.com',
