@@ -41,7 +41,7 @@ class GPSParser:
             if (one_line.find('RMC') != -1):
                 # print(one_line)
                 local_datetime = self.parse_datetime(one_line)
-                if self.local_datetime is not None:
+                if local_datetime is not None:
                     self.local_datetime = local_datetime
                 if self.parse_latlon(one_line, 3, 5) is False:
                     continue
