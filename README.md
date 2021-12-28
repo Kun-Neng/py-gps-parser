@@ -9,7 +9,7 @@ pip install pygpsparser
 
 * Step 2: import GPSParser
 ```python
-from gpsparser import GPSParser
+from pygpsparser import GPSParser
 ```
 
 * Step 3: prepare GPS sentences, e.g.,
