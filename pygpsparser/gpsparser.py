@@ -147,6 +147,13 @@ class GPSParser:
         elif i_lat == 2 and i_lon == 4:
             self.latlon_radian_GGA = [latitude_radian, longitude_radian]
 
+            self.quality_indicator_GGA = int(str_slice[6])
+            self.satellites_used_GGA = int(str_slice[7])
+            self.hdop_GGA = float(str_slice[8])
+            self.altitude_GGA = float(str_slice[9])
+            self.geoidal_separation_GGA = float(str_slice[11])
+            self.dgps_station_id_GGA = str_slice[14].split('*')[0]
+
         return True
     
     def create_satellite(self, str_slice, i_token):
