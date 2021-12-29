@@ -11,13 +11,19 @@ class GPSParser:
 
         self.__MIN_LAT_LEN = 3
         self.__MIN_LON_LEN = 4
+        self.__NUM_SATELLITES                = 12
+        self.__MAX_NUM_SATELLITES_IN_MESSGAE = 4
+        self.__NUM_FIELDS_IN_SATELLITE       = 4
         # self.__DIRECTION_MAP = {"N": "北緯", "S": "南緯", "E": "東經", "W": "西經"}
+
         self.latitude_degree = None
         self.latitude_minute = None
         self.longitude_degree = None
         self.longitude_minute = None
         self.latlon_radian_RMC = []
         self.latlon_radian_GGA = []
+
+        self.gsv_obj_map = {}
 
     def parse_NMEA(self, messages) -> bool:
         if messages == '':
@@ -51,6 +57,10 @@ class GPSParser:
                 if self.parse_latlon(one_line, 2, 4):
                     continue
                 flag_latlon_ready = True
+            
+            if (one_line.find('GSV') != -1):
+                if self.parse_satellites_in_view(one_line) is False:
+                    continue
 
         if flag_latlon_ready is True:
             self.is_GPS_normal = True
@@ -136,5 +146,86 @@ class GPSParser:
             self.latlon_radian_RMC = [latitude_radian, longitude_radian]
         elif i_lat == 2 and i_lon == 4:
             self.latlon_radian_GGA = [latitude_radian, longitude_radian]
+
+        return True
+    
+    def create_satellite(self, str_slice, i_token):
+        satellite_ID = str_slice[i_token * self.__NUM_FIELDS_IN_SATELLITE + 4]
+        satellite_elevation = int(str_slice[i_token * self.__NUM_FIELDS_IN_SATELLITE + 5])
+        satellite_azimuth = int(str_slice[i_token * self.__NUM_FIELDS_IN_SATELLITE + 6])
+        satellite_SNR = str_slice[i_token * self.__NUM_FIELDS_IN_SATELLITE + 7].split('*')[0]
+        satellite_SNR = None if satellite_SNR == '' else int(satellite_SNR)
+
+        satellite = {'ID': satellite_ID, 'Elevation': satellite_elevation, 'Azimuth': satellite_azimuth, 'SNR': satellite_SNR}
+
+        return satellite
+    
+    def parse_satellites_in_view(self, one_line) -> bool:
+        str_slice = one_line.split(',')
+
+        talker_ID = str_slice[0][1:3]
+        num_sequences = int(str_slice[1])
+        sequence_number = int(str_slice[2])
+        satellites_in_view = int(str_slice[3])
+        # print(f'{talker_ID}GSV {sequence_number}/{num_sequences}: {satellites_in_view} satellites')
+
+        if talker_ID in self.gsv_obj_map:
+            gsv_obj = self.gsv_obj_map[talker_ID]
+            if sequence_number > 1:
+                # Ignore the first receiving message if its sequence number is not 1
+                if gsv_obj['index_satellite'] == 0:
+                    return False
+
+                # Ignore the message that is not in the same GSV group
+                if num_sequences != gsv_obj['num_sequences'] and satellites_in_view != gsv_obj['satellites_in_view']:
+                    return False
+
+            # Ignore the message is not in order in the same GSV group
+            if gsv_obj['index_sequence'] >= sequence_number:
+                return False
+
+            if sequence_number == 1:
+                gsv_obj['talker_ID'] = talker_ID
+                gsv_obj['num_sequences'] = num_sequences
+                gsv_obj['index_sequence'] = 1
+                gsv_obj['satellites_in_view'] = satellites_in_view
+                gsv_obj['index_satellite'] = 0
+                gsv_obj['satellites'] = []
+
+            gsv_obj['index_sequence'] = sequence_number
+            if sequence_number < num_sequences:
+                gsv_obj['num_remaining_satellites'] = self.__MAX_NUM_SATELLITES_IN_MESSGAE
+            else:
+                gsv_obj['num_remaining_satellites'] = satellites_in_view % self.__MAX_NUM_SATELLITES_IN_MESSGAE
+
+            for i_token in range(gsv_obj['num_remaining_satellites']):
+                satellite = self.create_satellite(str_slice, i_token)
+                gsv_obj['satellites'].append(satellite)
+                gsv_obj['index_satellite'] += 1
+        else:
+            # Ignore the GSV message if it does not exist in the map and its sequence number is not 1
+            if sequence_number != 1:
+                return False
+
+            gsv_obj = {
+                'talker_ID': talker_ID,
+                'num_sequences': num_sequences,
+                'satellites_in_view': satellites_in_view,
+                'index_satellite': 0,
+                'satellites': []
+            }
+
+            gsv_obj['index_sequence'] = sequence_number
+            if sequence_number < num_sequences:
+                gsv_obj['num_remaining_satellites'] = self.__MAX_NUM_SATELLITES_IN_MESSGAE
+            else:
+                gsv_obj['num_remaining_satellites'] = satellites_in_view % self.__MAX_NUM_SATELLITES_IN_MESSGAE
+
+            for i_token in range(gsv_obj['num_remaining_satellites']):
+                satellite = self.create_satellite(str_slice, i_token)
+                gsv_obj['satellites'].append(satellite)
+                gsv_obj['index_satellite'] += 1
+
+            self.gsv_obj_map[talker_ID] = gsv_obj
 
         return True
