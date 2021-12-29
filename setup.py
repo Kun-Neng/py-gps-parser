@@ -5,7 +5,7 @@ with open('README.md', 'r', encoding='utf-8') as fh:
 
 setuptools.setup(
     name='pygpsparser',
-    version='0.0.5',
+    version='0.0.6',
     author='Kun-Neng Hung',
     author_email='kunneng.hung@gmail.com',
     description='GPS Sentence Parser',
