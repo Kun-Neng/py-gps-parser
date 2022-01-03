@@ -11,10 +11,12 @@ class GPSParser:
 
         self.__MIN_LAT_LEN = 3
         self.__MIN_LON_LEN = 4
-        self.__NUM_SATELLITES                = 12
+        # self.__NUM_SATELLITES                = 12
         self.__MAX_NUM_SATELLITES_IN_MESSGAE = 4
         self.__NUM_FIELDS_IN_SATELLITE       = 4
-        # self.__DIRECTION_MAP = {"N": "北緯", "S": "南緯", "E": "東經", "W": "西經"}
+        # self.__DIRECTION_MAP = {'N': '北緯', 'S': '南緯', 'E': '東經', 'W': '西經'}
+        self.__MODE1_MAP = {'M': 'Manual', 'A': 'Automatic'}
+        self.__MODE2_MAP = {1: 'Fix not available', 2: '2D', 3: '3D'}
 
         self.latitude_degree = None
         self.latitude_minute = None
@@ -22,7 +24,7 @@ class GPSParser:
         self.longitude_minute = None
         self.latlon_radian_RMC = []
         self.latlon_radian_GGA = []
-
+        self.gsa_obj = {}
         self.gsv_obj_map = {}
 
     def parse_NMEA(self, messages) -> bool:
@@ -57,6 +59,9 @@ class GPSParser:
                 if self.parse_latlon(one_line, 2, 4):
                     continue
                 flag_latlon_ready = True
+            
+            if (one_line.find('GSA') != -1):
+                self.parse_active_satellites(one_line)
             
             if (one_line.find('GSV') != -1):
                 if self.parse_satellites_in_view(one_line) is False:
@@ -135,8 +140,8 @@ class GPSParser:
         self.longitude_degree = float(str_slice[i_lon][:3])
         self.longitude_minute = float(str_slice[i_lon][3:])
 
-        # latitude_str = self.__DIRECTION_MAP[lat_direction] + str(self.latitude_degree) + "度" + str(self.latitude_minute) + "分"
-        # longitude_str = self.__DIRECTION_MAP[lon_direction] + str(self.longitude_degree) + "度" + str(self.longitude_minute) + "分"
+        # latitude_str = self.__DIRECTION_MAP[lat_direction] + str(self.latitude_degree) + '度' + str(self.latitude_minute) + '分'
+        # longitude_str = self.__DIRECTION_MAP[lon_direction] + str(self.longitude_degree) + '度' + str(self.longitude_minute) + '分'
         # print(latitude_str, longitude_str)
 
         latitude_radian = self.latitude_degree + self.latitude_minute / 60
@@ -147,7 +152,46 @@ class GPSParser:
         elif i_lat == 2 and i_lon == 4:
             self.latlon_radian_GGA = [latitude_radian, longitude_radian]
 
+            self.quality_indicator_GGA = int(str_slice[6])
+            self.satellites_used_GGA = int(str_slice[7])
+            self.hdop_GGA = float(str_slice[8])
+            self.altitude_GGA = float(str_slice[9])
+            self.geoidal_separation_GGA = float(str_slice[11])
+            self.dgps_station_id_GGA = str_slice[14].split('*')[0]
+
         return True
+    
+    def parse_active_satellites(self, one_line) -> bool:
+        str_slice = one_line.split(',')
+
+        talker_ID = str_slice[0][1:3]
+
+        self.gsa_obj['talker_ID'] = talker_ID
+        self.gsa_obj['mode_1'] = self.__MODE1_MAP[str_slice[1]]
+        self.gsa_obj['mode_2'] = self.__MODE2_MAP[int(str_slice[2])]
+
+        # TODO: Check which satellite ID belongs to which GNSS
+        satellite_IDs = str_slice[3:15]
+        for index in range(len(satellite_IDs)):
+            satellite_ID = satellite_IDs[index]
+            if satellite_ID == '':
+                continue
+
+            if 'active_satellites' not in self.gsa_obj:
+                self.gsa_obj['active_satellites'] = [satellite_ID]
+                continue
+            
+            if satellite_ID in self.gsa_obj['active_satellites']:
+                continue
+
+            self.gsa_obj['active_satellites'].append(satellite_ID)
+
+        self.gsa_obj['pdop'] = float(str_slice[15])
+        self.gsa_obj['hdop'] = float(str_slice[16])
+        self.gsa_obj['vdop'] = float(str_slice[17].split('*')[0])
+        # print(self.gsa_obj)
+
+        return 'active_satellites' in self.gsa_obj
     
     def create_satellite(self, str_slice, i_token):
         satellite_ID = str_slice[i_token * self.__NUM_FIELDS_IN_SATELLITE + 4]
